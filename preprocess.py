@@ -1,116 +1,135 @@
-from scapy.all import *
-
 import os
+import re
 import pandas as pd
 
-import time
+abnormal_ipv4_files = [
+    #'Ethernet_IP_TCP_HTTP 1.csv',
+    'Ethernet_IP_TCP_HTTP 1_HTTP Request.csv',
+    'Ethernet_IP_TCP_HTTP 1_HTTP Response.csv',
+]
 
-from ppu import *
+abnormal_ipv6_files = [
+    #'Ethernet_IPv6_TCP_HTTP 1.csv',
+    'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
+    'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
+]
 
-def log_time(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        start_time = time.time()
-        result = func(self, *args, **kwargs)
-        end_time = time.time()
-        print("Time: %f " % (end_time - start_time))
-        return result
+normal_ipv6_files = [
+    'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
+    'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
+]
 
-    return wrapper
+def ipv42ipv6(df : pd.DataFrame) -> pd.DataFrame :
 
+    columns = df.columns
+    for col in columns:
+        if 'IP_src' in col or 'IP_dst' in col:
+            df['_'.join(['IPv6', col.split('_')[1], '{}']).format(str(int(col[-1]) + 2))] = df[col]
+            df = df.drop(columns = [col])
+        elif 'IP' in col:
+            df = df.rename(columns = {col : col.replace('IP', 'IPv6')})
+    df['IPv6_src_0'] = 0
+    df['IPv6_src_1'] = 0
+    df['IPv6_dst_0'] = 0
+    df['IPv6_dst_1'] = 0
+    return df
 
-@log_time
-def build_examples(path: str, filename: str) :
+# join request and response
+def merge_normal(path : str) -> pd.DataFrame :
 
-    fs = os.listdir(path)
-    fs = [os.path.join(path, f) for f in fs if f.find('pcap') != -1]
+    df_request = pd.read_csv(os.path.join(path, normal_ipv6_files[0]))
+    df_response = pd.read_csv(os.path.join(path, normal_ipv6_files[0]))
 
-    unique_packet = set()
-    packet_ids = set()
-    writer = PcapWriter(filename)
+    df_request = df_request.sort_values(by = 'time')
+    df_response = df_response.sort_values(by = 'time')
 
-    for f in fs:
-        try:
-            s = PcapReader(f)
-            while True:
-                try:
-                    p = s.read_packet()
-                    layers = [layer.name for i, layer in enumerate(expand(p), 0)]
-                    unique_packet.update(layers)
-                    packet_id = getPID(layers)
-                    if packet_id not in packet_ids:
-                        p.show()
-                        writer.write(p)
-                        packet_ids.add(packet_id)
-                except EOFError:
-                    #print('Finish', f)
-                    break
-            s.close()
-            writer.flush()
+    df = df_request.join(df_response, lsuffix='_caller', rsuffix='_other')
 
-        except Exception as e:
-            print('Error', e)
-
-    print(unique_packet)
-    writer.flush()  
-    writer.close()
-
-
-def processFile(f : str, ppus : set, label : int):
-    try:
-        s = PcapReader(f)
-        while True:
-            try:
-                p = s.read_packet()
-                packet_id = getPIDFromPkt(p)
-                ppus[packet_id].getData(p, label)
-            except EOFError:
-                break
-            except Exception as e:
-                # print(e)
-                print('-----------------Pkt Process Error')
-                p.show()
-                print('-----------------')
-                raise e
-        s.close()
-
-    except Exception as e:
-        raise e
-
-
-@log_time
-def extract(input_path : str, output_path : str, example_file : str, label : int):
-
-    fs = os.listdir(input_path)
-    fs = [os.path.join(input_path, f) for f in fs]
-
-    pkts = rdpcap(example_file)
-    ppus = [getPIDFromPkt(p) for p in pkts]
-    ppus = list(set(ppus))
-
-    ppus = [(pid, GeneralPacket(pid, output_path)) for pid in ppus]
-    ppus = dict(ppus) 
-
-    for f in fs:
-        processFile(f, ppus, label)
-
-    [ppu.close() for i, ppu in ppus.items()]
-    total = sum([ppu.count for i, ppu in ppus.items()])
-    print('total packet:', total)
-
-
-if __name__ == "__main__":
-
-    all_pakcet_path = 'data'
-    normal_packet_path = 'data/normal'
-    abnormal_packet_path = 'data/abnormal'
-    example_file = 'output/example.pcap' 
+    return df
     
-    # not reslove default
-    load_layer('http') 
+# join request and response
+def merge_abnormal(path : str) -> pd.DataFrame :
 
-    # build_examples(all_pakcet_path, example_file)
+    dfs_ipv4 = [pd.read_csv(os.path.join(path, f)) for f in abnormal_ipv4_files]
+    dfs_ipv6 = [ipv42ipv6(df) for df in dfs_ipv4]  
+    df = dfs_ipv6[0].join(dfs_ipv6[1], lsuffix='_caller', rsuffix='_other')
+    dfs_ipv6 = [pd.read_csv(os.path.join(path, f)) for f in abnormal_ipv6_files]
+    dfs_ipv6 = dfs_ipv6[0].join(dfs_ipv6[1], lsuffix='_caller', rsuffix='_other')
+    df = pd.concat([df, dfs_ipv6], ignore_index = True)
 
-    extract(normal_packet_path, 'output/normal', example_file, 0)
-    extract(abnormal_packet_path, 'output/abnormal', example_file, 1)
+    return df
+
+
+def basic_data() -> pd.DataFrame:
+
+    abnormal_ipv4 = [pd.read_csv(os.path.join('output/abnormal', f)) for f in abnormal_ipv4_files]
+    abnormal_ipv4 = [ipv42ipv6(df) for df in abnormal_ipv4] 
+    abnormal_ipv6 = [pd.read_csv(os.path.join('output/abnormal', f)) for f in abnormal_ipv6_files]
+    normal_ipv6 = [pd.read_csv(os.path.join('output/normal', f)) for f in normal_ipv6_files]
+
+    dfs = abnormal_ipv4 + abnormal_ipv6 + normal_ipv6
+
+    df = pd.concat(dfs, ignore_index = True)
+    return df
+
+def basic_process(df: pd.DataFrame) -> pd.DataFrame :
+
+    df = df.dropna(thresh = 0.4 * df.shape[0], axis = 1) # drop cols with too many na value
+
+    not_process = [
+        #'Cookie',
+        'Date',
+        'Path',
+        'Host',
+        'Accept',
+        'Connection',
+        'TCP_options_Timestamp',
+        'Via',
+        'Server',
+        'Referer'
+    ]
+    df = df.drop(not_process, axis = 1)
+
+    drop_cols = [x for x in df.columns if len(df[x].unique()) < 2 or len(df[x].unique()) >= 0.99 * df.shape[0]]
+    df = df.drop(drop_cols, axis = 1)
+
+    df['Age'] = df['Age'].fillna('0').apply(lambda x:re.sub(r'[^0-9]','', x)) # special process
+
+    df = df.fillna(0) #fill na 
+
+    for col in ['TCP_flags', 'TCP_reserved', 'Method', 'ETag']:
+        if col in df.columns:
+            df[col] = pd.Categorical(df[col]).codes
+
+    num_cols = [
+        'Ethernet_dst_0', 
+        'Ethernet_dst_1', 
+        'Ethernet_dst_2', 
+        'Ethernet_dst_3', 
+        'Ethernet_dst_4', 
+        'Ethernet_dst_5', 
+        'Ethernet_src_0', 
+        'Ethernet_src_1', 
+        'Ethernet_src_2', 
+        'Ethernet_src_3', 
+        'Ethernet_src_4',
+        'Ethernet_src_5',
+        'IPv6_dst_0', 
+        'IPv6_dst_1', 
+        'IPv6_dst_2', 
+        'IPv6_dst_3', 
+        'IPv6_dst_4', 
+        'IPv6_dst_5', 
+        'IPv6_src_0', 
+        'IPv6_src_1', 
+        'IPv6_src_2', 
+        'IPv6_src_3', 
+        'IPv6_src_4',
+        'IPv6_src_5',
+        'Age'
+    ]
+
+    df[num_cols] = df[num_cols].applymap(lambda x : int(x, 16) if type(x) == str else x)
+    
+    return df
 

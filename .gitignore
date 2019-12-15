@@ -1,4 +1,7 @@
 output/
 data/
 __pycache__/
+
+
+.vscode/
 *.txt

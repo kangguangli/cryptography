@@ -3,6 +3,13 @@ from scapy.layers import http
 
 import pandas as pd
 
+configs = {
+    'mask': [
+        'padding',
+        'raw'
+    ]
+}
+
 def generalLayer(layer):
 
     data = {}
@@ -11,7 +18,9 @@ def generalLayer(layer):
             # TODO
             # src = 2002:dca5:f85::dca5:f85 [6to4 GW: 220.165.15.133] from ips_2002-dca5-f85--dca5-f85_20190131_202924_543872217.pcap
             fields = item.split('.') if '.' in item and ':' not in item else item.split(':')
-            fields = fields[:6] 
+            fields = fields[:6]
+            if len(fields) < 6 and 'IPv6' in layer.name: # make sure IPv6 and fill 6 address
+                fields += [0 for x in range(6 - len(fields))]
             for i in range(len(fields)):
                 data['_'.join([layer.name, key, str(i)])] = fields[i]
         elif 'data' in key or 'load' in key:
@@ -213,6 +222,40 @@ def ipv6EH(layer):
     return data
 
 
+def httpRequest(layer):
+
+    data = {}
+
+    fileds = ['Method', 'Path', 'Http-Version'] + http.REQUEST_HEADERS + http.GENERAL_HEADERS
+    for f in fileds:
+        data[f] = None
+
+    for key, item in layer.fields.items():
+        if key in fileds:
+            data[key] = item
+        else:
+            pass
+        
+    return data
+
+
+def httpResponse(layer):
+
+    data = {}
+
+    fields = ['Status-Code', 'Reason-Phrase', 'Http-Version'] + http.RESPONSE_HEADERS + http.GENERAL_HEADERS
+    for f in fields:
+        data[f] = None
+
+    for key, item in layer.fields.items():
+        if key in fields:
+            data[key] = item
+        else:
+            pass
+        
+    return data
+
+
 all_layers = { 
     'IPv6 Extension Header - Hop-by-Hop Options Header': ipv6EH, 
     'Raw': generalLayer, 
@@ -243,8 +286,8 @@ all_layers = {
     'ICMPv6 Parameter Problem': generalLayer, 
     'UDP in ICMP': generalLayer, 
     'TCP': tcpLayer,
-    'HTTP Response': generalLayer,
-    'HTTP Request': generalLayer,
+    'HTTP Response': httpResponse,
+    'HTTP Request': httpRequest,
     'HTTP 1': generalLayer
 }
 
@@ -254,10 +297,12 @@ def getPID(layers : list):
 
 
 def expand(x : Packet):
-    yield x
+    if x.name.lower() not in configs['mask']:
+        yield x
     while x.payload:
         x = x.payload
-        yield x
+        if x.name.lower() not in configs['mask']:
+            yield x
 
 
 def getPIDFromPkt(p : Packet):
