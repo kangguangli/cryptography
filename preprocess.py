@@ -2,22 +2,6 @@ import os
 import re
 import pandas as pd
 
-abnormal_ipv4_files = [
-    #'Ethernet_IP_TCP_HTTP 1.csv',
-    'Ethernet_IP_TCP_HTTP 1_HTTP Request.csv',
-    'Ethernet_IP_TCP_HTTP 1_HTTP Response.csv',
-]
-
-abnormal_ipv6_files = [
-    #'Ethernet_IPv6_TCP_HTTP 1.csv',
-    'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
-    'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
-]
-
-normal_ipv6_files = [
-    'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
-    'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
-]
 
 def ipv42ipv6(df : pd.DataFrame) -> pd.DataFrame :
 
@@ -60,7 +44,119 @@ def merge_abnormal(path : str) -> pd.DataFrame :
     return df
 
 
+def tcp_abnormal_data() -> pd.DataFrame:
+
+    abnormal_ipv4_files = [
+        'Ethernet_IP_TCP_HTTP 1_Raw.csv',
+        'Ethernet_IP_TCP_HTTP 1_HTTP Request.csv',
+        'Ethernet_IP_TCP_HTTP 1_HTTP Response_Raw.csv',
+    ]
+
+    abnormal_ipv6_files = [
+        'Ethernet_IPv6_TCP_HTTP 1_Raw_Padding.csv',
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Response_Raw_Padding.csv',
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Request_Raw_Padding.csv',
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Request_Padding.csv'
+    ]
+
+    normal_ipv6_files = [
+        # 'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
+        # 'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
+    ]
+
+    abnormal_ipv4 = [pd.read_csv(os.path.join('output/abnormal', f)) for f in abnormal_ipv4_files]
+    abnormal_ipv4 = [ipv42ipv6(df) for df in abnormal_ipv4] 
+    abnormal_ipv6 = [pd.read_csv(os.path.join('output/abnormal', f)) for f in abnormal_ipv6_files]
+    normal_ipv6 = [pd.read_csv(os.path.join('output/normal', f)) for f in normal_ipv6_files]  
+
+    dfs = abnormal_ipv4 + abnormal_ipv6 + normal_ipv6
+
+    df = pd.concat(dfs, ignore_index = True)
+    return df
+
+def tcp_abnormal_processs(df:pd.DataFrame) -> pd.DataFrame:
+
+    df['Path'] = df['Path'].fillna(df['Raw_load'])
+    df = df.dropna(thresh = 0.4 * df.shape[0], axis = 1) # drop cols with too many na value
+
+    not_process = [
+        #'Cookie',
+        'Date',
+        'Path',
+        'Host',
+        'Accept',
+        'Connection',
+        'TCP_options_Timestamp',
+        'Via',
+        'Server',
+        'Referer',
+        'Padding_load',
+        'Raw_load'
+    ]
+    df = df.drop(not_process, axis = 1)
+
+    drop_cols = [x for x in df.columns if len(df[x].unique()) < 2 or len(df[x].unique()) >= 0.99 * df.shape[0]]
+    df = df.drop(drop_cols, axis = 1)
+
+    df['Age'] = df['Age'].fillna('0').apply(lambda x:re.sub(r'[^0-9]','', x)) # special process
+
+    df = df.fillna(0) #fill na 
+
+    for col in ['TCP_flags', 'TCP_reserved', 'Method', 'ETag']:
+        if col in df.columns:
+            df[col] = pd.Categorical(df[col]).codes
+
+    num_cols = [
+        'Ethernet_dst_0', 
+        'Ethernet_dst_1', 
+        'Ethernet_dst_2', 
+        'Ethernet_dst_3', 
+        'Ethernet_dst_4', 
+        'Ethernet_dst_5', 
+        'Ethernet_src_0', 
+        'Ethernet_src_1', 
+        'Ethernet_src_2', 
+        'Ethernet_src_3', 
+        'Ethernet_src_4',
+        'Ethernet_src_5',
+        'IPv6_dst_0', 
+        'IPv6_dst_1', 
+        'IPv6_dst_2', 
+        'IPv6_dst_3', 
+        'IPv6_dst_4', 
+        'IPv6_dst_5', 
+        'IPv6_src_0', 
+        'IPv6_src_1', 
+        'IPv6_src_2', 
+        'IPv6_src_3', 
+        'IPv6_src_4',
+        'IPv6_src_5',
+        'Age'
+    ]
+
+    df[num_cols] = df[num_cols].applymap(lambda x : int(x, 16) if type(x) == str else x)
+    
+    return df
+
+
 def basic_data() -> pd.DataFrame:
+
+    abnormal_ipv4_files = [
+        #'Ethernet_IP_TCP_HTTP 1.csv',
+        'Ethernet_IP_TCP_HTTP 1_HTTP Request.csv',
+        'Ethernet_IP_TCP_HTTP 1_HTTP Response.csv',
+    ]
+
+    abnormal_ipv6_files = [
+        #'Ethernet_IPv6_TCP_HTTP 1.csv',
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
+    ]
+
+    normal_ipv6_files = [
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Request.csv',
+        'Ethernet_IPv6_TCP_HTTP 1_HTTP Response.csv',
+    ]
 
     abnormal_ipv4 = [pd.read_csv(os.path.join('output/abnormal', f)) for f in abnormal_ipv4_files]
     abnormal_ipv4 = [ipv42ipv6(df) for df in abnormal_ipv4] 
@@ -71,6 +167,7 @@ def basic_data() -> pd.DataFrame:
 
     df = pd.concat(dfs, ignore_index = True)
     return df
+
 
 def basic_process(df: pd.DataFrame) -> pd.DataFrame :
 
@@ -132,4 +229,3 @@ def basic_process(df: pd.DataFrame) -> pd.DataFrame :
     df[num_cols] = df[num_cols].applymap(lambda x : int(x, 16) if type(x) == str else x)
     
     return df
-

@@ -5,8 +5,8 @@ import pandas as pd
 
 configs = {
     'mask': [
-        'padding',
-        'raw'
+        #'padding',
+        #'raw'
     ]
 }
 
@@ -24,7 +24,7 @@ def generalLayer(layer):
             for i in range(len(fields)):
                 data['_'.join([layer.name, key, str(i)])] = fields[i]
         elif 'data' in key or 'load' in key:
-            data['_'.join([layer.name, key])] = hash(item)
+            data['_'.join([layer.name, key])] = item#hash(item)
         elif 'options' in key:
             for k, i in dict(item).items():
                 data['_'.join([layer.name, key, k])] = i
