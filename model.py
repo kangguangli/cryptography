@@ -25,6 +25,8 @@ def one_class_classifier():
     # 这列的df可以直接喂给分类器
     # 如果想对特征做更精细的处理，可以在此函数基础上进行修改
 
+    df = preprocess.vica_further_process(df)
+
     # 训练分类器，分别计算正负例的精度和召回率
 
     sclaer = MinMaxScaler()
