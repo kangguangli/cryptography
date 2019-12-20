@@ -114,7 +114,7 @@ class PLU:
         y_train = np.r_[pos_label, RN_label]
         X_test = self.U
 
-        clf = svm.SVC(kernel = 'rbf', gamma = 'auto', verbose = True, random_state = 0)
+        clf = svm.SVC(kernel = 'rbf', gamma = 'auto', class_weight='balanced')
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
         return y_pred
@@ -127,11 +127,10 @@ class PLU:
         X_train = np.r_[pos, RN]
         y_train = np.r_[pos_label, RN_label]
         X_test = self.U
-        cost_fn = 1.5 
-        cost_fp = 1
+        cost_fn = 1
+        cost_fp = 3
         weight = [cost_fn if i else cost_fp for i in y_train]
-        
-        clf = svm.SVC(kernel = 'rbf', gamma = 'auto', probability=True, random_state = 0)
+        clf = svm.SVC(kernel = 'rbf', gamma = 'auto')
         clf.fit(X_train, y_train, sample_weight=weight) 
         y_pred = clf.predict(X_test)
         return y_pred
