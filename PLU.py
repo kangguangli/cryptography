@@ -44,10 +44,10 @@ class PLU:
         y_train = np.r_[pos_label, un_label]
         X_test = self.U
 
-        clf = naive_bayes.MultinomialNB()
+        clf = naive_bayes.GaussianNB()
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-        RN = self.U[y_pred == 0] 
+        RN = self.U[y_pred == 0]
         return RN
     
     def get_RN_Rocchio(self):
@@ -87,7 +87,7 @@ class PLU:
         X_train = np.r_[pos, un]
         y_train = np.r_[pos_label, un_label]
 
-        clf = naive_bayes.MultinomialNB()
+        clf = naive_bayes.GaussianNB()
         clf.fit(X_train, y_train)
         y_prob_un = clf.predict_proba(self.U)[:, -1]
         y_prob_spy = clf.predict_proba(spy)[:, -1]
@@ -127,9 +127,9 @@ class PLU:
         X_train = np.r_[pos, RN]
         y_train = np.r_[pos_label, RN_label]
         X_test = self.U
-        cost_fn = 1
-        cost_fp = 3
-        weight = [cost_fn if i else cost_fp for i in y_train]
+        cost_fu = len(pos)/len(RN)*1.5
+        cost_fp = 1
+        weight = [cost_fp if i else cost_fu for i in y_train]
         clf = svm.SVC(kernel = 'rbf', gamma = 'auto')
         clf.fit(X_train, y_train, sample_weight=weight) 
         y_pred = clf.predict(X_test)
@@ -161,7 +161,6 @@ class PLU:
                 X_train = np.r_[pos, NRN]
                 y_train = np.r_[pos_label, RN_label]
         y_pred = clf.predict(X_test)
-        print(len(X_test))
         return y_pred
 
     def get_pred_Logistic(self, RN):
