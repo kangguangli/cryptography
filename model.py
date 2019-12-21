@@ -45,12 +45,12 @@ def one_class_classifier():
     clf = clf.fit(sclaer.fit_transform(train_x))
     
     x, y = split_x_y(test_postive)
-    y_pred = clf.predict(sclaer.fit_transform(x))
+    y_pred = clf.predict(sclaer.transform(x))
     y = y.apply(lambda x : 1 if x == 0 else -1)
     print(precision_score(y, y_pred, pos_label = 1, average = 'binary'), recall_score(y, y_pred, pos_label = 1, average = 'binary'), accuracy_score(y, y_pred))
 
     x, y = split_x_y(negtive)
-    y_pred = clf.predict(sclaer.fit_transform(x))
+    y_pred = clf.predict(sclaer.transform(x))
     y = y.apply(lambda x : 1 if x == 0 else -1)
     print(precision_score(y, y_pred, pos_label = -1, average = 'binary'), recall_score(y, y_pred, pos_label = -1, average = 'binary'), accuracy_score(y, y_pred))
 
