@@ -9,8 +9,7 @@ from tools import log_time
 
 
 @log_time
-def build_examples(path: str, filename: str) :
-
+def build_examples(path: str, filename: str):
     fs = os.listdir(path)
     fs = [os.path.join(path, f) for f in fs if f.find('pcap') != -1]
 
@@ -32,7 +31,7 @@ def build_examples(path: str, filename: str) :
                         writer.write(p)
                         packet_ids.add(packet_id)
                 except EOFError:
-                    #print('Finish', f)
+                    # print('Finish', f)
                     break
             s.close()
             writer.flush()
@@ -41,11 +40,11 @@ def build_examples(path: str, filename: str) :
             print('Error', e)
 
     print(unique_packet)
-    writer.flush()  
+    writer.flush()
     writer.close()
 
 
-def processFile(f : str, ppus : set, label : int):
+def processFile(f: str, ppus: set, label: int):
     try:
         s = PcapReader(f)
         while True:
@@ -68,8 +67,9 @@ def processFile(f : str, ppus : set, label : int):
 
 
 @log_time
-def extract(input_path : str, output_path : str, example_file : str, label : int):
-
+def extract(input_path: str, output_path: str, example_file: str, label: int):
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
     fs = os.listdir(input_path)
     fs = [os.path.join(input_path, f) for f in fs]
 
@@ -78,7 +78,7 @@ def extract(input_path : str, output_path : str, example_file : str, label : int
     ppus = list(set(ppus))
 
     ppus = [(pid, GeneralPacket(pid, output_path)) for pid in ppus]
-    ppus = dict(ppus) 
+    ppus = dict(ppus)
 
     for f in fs:
         processFile(f, ppus, label)
@@ -89,17 +89,16 @@ def extract(input_path : str, output_path : str, example_file : str, label : int
 
 
 if __name__ == "__main__":
-
-    all_pakcet_path = 'data'
+    all_pakcet_path = 'data/all'
     normal_packet_path = 'data/normal'
     abnormal_packet_path = 'data/abnormal'
-    example_file = 'output/example.pcap' 
-    
+    example_file = 'output/example.pcap'
+
     # not reslove default
-    load_layer('http') 
+    load_layer('http')
 
-    build_examples(all_pakcet_path, example_file)
+    # build_examples(all_pakcet_path, example_file)
 
+    # extract(all_pakcet_path, 'output/all', example_file, -1)
     extract(normal_packet_path, 'output/normal', example_file, 0)
     extract(abnormal_packet_path, 'output/abnormal', example_file, 1)
-
