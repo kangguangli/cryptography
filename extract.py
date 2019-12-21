@@ -89,7 +89,10 @@ def extract(input_path: str, output_path: str, example_file: str, label: int):
 
 
 if __name__ == "__main__":
-    all_pakcet_path = 'data/all'
+
+    # all_pakcet_path = 'data/all'
+
+    all_pakcet_path = 'data/abnormal'
     normal_packet_path = 'data/normal'
     abnormal_packet_path = 'data/abnormal'
     example_file = 'output/example.pcap'
@@ -99,6 +102,5 @@ if __name__ == "__main__":
 
     # build_examples(all_pakcet_path, example_file)
 
-    # extract(all_pakcet_path, 'output/all', example_file, -1)
-    extract(normal_packet_path, 'output/normal', example_file, 0)
+    #extract(normal_packet_path, 'output/normal', example_file, 0)
     extract(abnormal_packet_path, 'output/abnormal', example_file, 1)
