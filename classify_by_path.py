@@ -146,11 +146,11 @@ def one_class_classifier():
     print('Start Feature Train')
     clfs = []
     for i in range(1, 2):
-        clfs.append(Classifier((i, i), 0.005))
-        clfs.append(Classifier((i, i), 0.003))
+        # clfs.append(Classifier((i, i), 0.005))
+        # clfs.append(Classifier((i, i), 0.003))
         clfs.append(Classifier((i, i), 0.0055))
-        clfs.append(Classifier((i, i), 0.0058))
-        clfs.append(Classifier((i, i), 0.006))
+        # clfs.append(Classifier((i, i), 0.0058))
+        # clfs.append(Classifier((i, i), 0.006))
     # clfs.append(Classifier(ngram_range=(1, 1), analyzer='word', tokenizer=tokenize))
     for clf in clfs:
         clf.fit_tf_idf(df)

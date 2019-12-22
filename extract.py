@@ -100,7 +100,11 @@ if __name__ == "__main__":
     # not reslove default
     load_layer('http')
 
+<<<<<<< HEAD
     # build_examples(all_pakcet_path, example_file)
+=======
+    #build_examples(all_pakcet_path, example_file)
+>>>>>>> 02e553793fb77fc54ab02ad4b6185d7875c96f6a
 
-    #extract(normal_packet_path, 'output/normal', example_file, 0)
+    extract(normal_packet_path, 'output/normal', example_file, 0)
     extract(abnormal_packet_path, 'output/abnormal', example_file, 1)
