@@ -6,6 +6,7 @@ from urllib.parse import unquote
 
 vica_path_backup = None
 
+
 def ipv42ipv6(df: pd.DataFrame) -> pd.DataFrame:
     columns = df.columns
     for col in columns:
@@ -53,15 +54,14 @@ def basic_data() -> pd.DataFrame:
     return df
 
 
-def basic_process(df: pd.DataFrame) -> pd.DataFrame:
-
+def basic_process(df: pd.DataFrame, use_path: bool = False) -> pd.DataFrame:
     df['Path'] = df['Path'].fillna(df['Raw_load'])
     df = df.dropna(thresh=0.4 * df.shape[0], axis=1)  # drop cols with too many na value
 
     not_process = [
         # 'Cookie',
         'Date',
-        'Path',
+        # 'Path',
         'Host',
         'Accept',
         'Connection',
@@ -118,11 +118,16 @@ def basic_process(df: pd.DataFrame) -> pd.DataFrame:
 
     df[num_cols] = df[num_cols].applymap(lambda x: int(x, 16) if type(x) == str else x)
 
+    if use_path:
+        df = n_gram_path_process(df)
+    else:
+        df = df.drop('Path', axis=1)
+
     return df
 
 
 def vica_further_process(df: pd.DataFrame) -> pd.DataFrame:
-    add_info_from_path(df) # there are also soem "cheating" attribute
+    add_info_from_path(df)  # there are also soem "cheating" attribute
     # ont_hot(df, "Method") # if you would like to change some method to one hot
     # add_spam_score(df) # can be slower, and the performance is not so good
     further_drop_useless_column(df)
