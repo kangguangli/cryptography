@@ -99,7 +99,7 @@ def get_most_frq_words(vectorizer, df):
 def one_class_classifier():
     df = preprocess.basic_data()
     print('>>>>>>>>>>>', len(df['Path'].unique()))
-    df['Path'] = df['Path'].fillna(df['Raw_load'])
+    # df['Path'] = df['Path'].fillna(df['Raw_load'])
     print('>>>>>>>>>>>', len(df['Path'].unique()))
     df = df[['Path', 'label']]
 
@@ -145,10 +145,11 @@ def one_class_classifier():
     #     vocabulary = pickle.load(fin)
     print('Start Feature Train')
     clfs = []
-    for i in range(1, 2):
+    for i in range(1, 3):
         # clfs.append(Classifier((i, i), 0.005))
         # clfs.append(Classifier((i, i), 0.003))
-        clfs.append(Classifier((i, i), 0.0055))
+        clfs.append(Classifier((i, i), 0.01))
+        # clfs.append(Classifier((i, i), 0.0055))
         # clfs.append(Classifier((i, i), 0.0058))
         # clfs.append(Classifier((i, i), 0.006))
     # clfs.append(Classifier(ngram_range=(1, 1), analyzer='word', tokenizer=tokenize))
@@ -167,7 +168,7 @@ def one_class_classifier():
     # clf = clf.fit(train_x)
     for clf in clfs:
         clf.fit_clf(train_positive)
-    not_always_true = -1
+    not_always_true = 1
     print('Start testing positive')
     # x, y = split_x_y(test_positive)
     # x, y = split_x_y(positive)
@@ -200,6 +201,7 @@ def one_class_classifier():
     print(precision_score(y, y_pred, pos_label=-1, average='binary'),
           recall_score(y, y_pred, pos_label=-1, average='binary'), accuracy_score(y, y_pred))
 
+    exit(0)
     print('Start testing all')
     # x, y = split_x_y(negative)
     # y_pred = clf.predict(x)

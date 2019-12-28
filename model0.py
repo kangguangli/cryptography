@@ -29,8 +29,8 @@ def one_class_classifier():
 
     df = preprocess.vica_further_process(df)
 
-    df = preprocess.n_gram_path_process(df)
-    # df = df.drop('Path', axis=1)
+    # df = preprocess.n_gram_path_process(df)
+    df = df.drop('Path', axis=1)
 
     # 训练分类器，分别计算正负例的精度和召回率
 
