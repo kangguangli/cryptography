@@ -1,7 +1,7 @@
 import pandas as pd
 import preprocess
 from sklearn.svm import OneClassSVM
-from sklearn.metrics import precision_score, recall_score, accuracy_score
+from sklearn.metrics import precision_score, recall_score, roc_curve, auc, roc_auc_score,f1_score
 from sklearn.preprocessing import MinMaxScaler
 
 from tools import log_time
@@ -42,31 +42,32 @@ def one_class_classifier():
     # OneClassSVM用来做离群检验，可以检测异常数据，适用于只知道正例的情况，是一种无监督方法
     # 下面的参数中相对比较重要的是nu，代表输入数据中异常数据比例的上界
     # 此时输入的全为正例，因此将其设为一个比较小的值
-    clf = OneClassSVM(kernel='rbf', gamma='auto', verbose=True, max_iter=-1, random_state=0, nu=1e-6)
+    clf = OneClassSVM(kernel='rbf', gamma='auto', max_iter=-1, random_state=0, nu=1e-6)
     clf = clf.fit(sclaer.fit_transform(train_x))
 
-    x, y = split_x_y(test_postive)
-<<<<<<< HEAD
-    y_pred = clf.predict(sclaer.fit_transform(x))
-    y = y.apply(lambda x: 1 if x == 0 else -1)
-    print(precision_score(y, y_pred, pos_label=1, average='binary'),
-          recall_score(y, y_pred, pos_label=1, average='binary'), accuracy_score(y, y_pred))
+    test = pd.concat([test_postive, negtive])
+    x, y = split_x_y(test)
 
-    x, y = split_x_y(negtive)
-    y_pred = clf.predict(sclaer.fit_transform(x))
-    y = y.apply(lambda x: 1 if x == 0 else -1)
-    print(precision_score(y, y_pred, pos_label=-1, average='binary'),
-          recall_score(y, y_pred, pos_label=-1, average='binary'), accuracy_score(y, y_pred))
-=======
     y_pred = clf.predict(sclaer.transform(x))
     y = y.apply(lambda x : 1 if x == 0 else -1)
-    print(precision_score(y, y_pred, pos_label = 1, average = 'binary'), recall_score(y, y_pred, pos_label = 1, average = 'binary'), accuracy_score(y, y_pred))
 
-    x, y = split_x_y(negtive)
-    y_pred = clf.predict(sclaer.transform(x))
-    y = y.apply(lambda x : 1 if x == 0 else -1)
-    print(precision_score(y, y_pred, pos_label = -1, average = 'binary'), recall_score(y, y_pred, pos_label = -1, average = 'binary'), accuracy_score(y, y_pred))
->>>>>>> 02e553793fb77fc54ab02ad4b6185d7875c96f6a
+    p1 = precision_score(y, y_pred, pos_label = 1, average = 'binary')
+    r1 = recall_score(y, y_pred, pos_label = 1, average = 'binary')
+    f1 = f1_score(y, y_pred, pos_label = 1, average = 'binary')
+
+    fpr, tpr, _ = roc_curve(y, y_pred, pos_label = 1)
+    auc1 = auc(fpr, tpr)
+
+    print(p1, r1, f1, auc1)
+
+    p0 = precision_score(y, y_pred, pos_label = -1, average = 'binary')
+    r0 = recall_score(y, y_pred, pos_label = -1, average = 'binary')
+    f0 = f1_score(y, y_pred, pos_label = -1, average = 'binary')
+
+    fpr, tpr, _ = roc_curve(y, y_pred, pos_label =-1)
+    auc0 = auc(fpr, tpr)
+
+    print(p0, r0, f0, auc0)
 
 
 if __name__ == "__main__":

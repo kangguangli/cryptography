@@ -61,7 +61,7 @@ def basic_process(df: pd.DataFrame) -> pd.DataFrame:
     not_process = [
         # 'Cookie',
         'Date',
-        # 'Path',
+        'Path',
         'Host',
         'Accept',
         'Connection',
@@ -70,11 +70,13 @@ def basic_process(df: pd.DataFrame) -> pd.DataFrame:
         'Server',
         'Referer'
     ]
+    not_process = [col for col in not_process if col in df.columns]
     global vica_path_backup
     vica_path_backup = df['Path'].astype(str)
     df = df.drop(not_process, axis=1)
 
-    df['Age'] = df['Age'].fillna('0').apply(lambda x: re.sub(r'[^0-9]', '', x))  # special process
+    if 'Age' in df.columns:
+        df['Age'] = df['Age'].fillna('0').apply(lambda x: re.sub(r'[^0-9]', '', x))  # special process
 
     df = df.fillna(0)  # fill na
 
@@ -112,6 +114,7 @@ def basic_process(df: pd.DataFrame) -> pd.DataFrame:
         'IPv6_src_5',
         'Age',
     ]
+    num_cols = [col for col in num_cols if col in df.columns]
 
     df[num_cols] = df[num_cols].applymap(lambda x: int(x, 16) if type(x) == str else x)
 
@@ -180,6 +183,7 @@ def further_drop_useless_column(df):
         'IPv6_src_4',
         'IPv6_src_5',
     ]
+    not_process = [col for col in not_process if col in df.columns]
     df = df.drop(not_process, axis=1)
 
 
