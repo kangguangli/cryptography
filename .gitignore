@@ -1,5 +1,7 @@
-output/
-data/
+output/abnormal/*
+output/normal/*
+data/abnormal/*
+data/normal/*
 __pycache__/
 
 .idea/
