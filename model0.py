@@ -1,7 +1,7 @@
 import pandas as pd
 import preprocess
 from sklearn.svm import OneClassSVM
-from sklearn.metrics import precision_score, recall_score, accuracy_score
+from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score, f1_score
 from sklearn.preprocessing import MinMaxScaler
 import PLU
 import numpy as np
@@ -22,7 +22,7 @@ def one_class_classifier():
     # 此时df内的数据包含了csv的所有列，具体使用了那些csv文件见函数内部，如果想使用更多数据可以在此函数基础上修改
     # 这里的df“好像”可以直接喂给一些对数据格式要求不严格的分类器，比如lightgbm，如果我没记错的话，也可能我记错了
 
-    df = preprocess.basic_process(df)
+    df = preprocess.basic_process(df, True)
     # 在此函数中对特征进行了一些裁剪，细节见函数内部，代码比较简单，不详细介绍了
     # 这列的df可以直接喂给分类器
     # 如果想对特征做更精细的处理，可以在此函数基础上进行修改
@@ -30,7 +30,7 @@ def one_class_classifier():
     df = preprocess.vica_further_process(df)
 
     # df = preprocess.n_gram_path_process(df)
-    df = df.drop('Path', axis=1)
+    #df = df.drop('Path', axis=1)
 
     # 训练分类器，分别计算正负例的精度和召回率
 
@@ -58,6 +58,7 @@ def one_class_classifier():
     sclaer.fit(P)
     plu = PLU.PLU(sclaer.transform(P), sclaer.transform(U))
     # plu = PLU.PLU(P, U)
+
     RN = plu.stage_one(stage1[0])
     print(len(RN))
     y_pred = plu.stage_two(RN,stage2[3])
@@ -65,8 +66,11 @@ def one_class_classifier():
     print(accuracy_score(y_test, y_pred))
     print(precision_score(y_test, y_pred, pos_label=0))
     print(recall_score(y_test, y_pred, pos_label=0))
+    print(f1_score(y_test, y_pred, pos_label=0))
     print(precision_score(y_test, y_pred, pos_label=1))
     print(recall_score(y_test, y_pred, pos_label=1))
+    print(f1_score(y_test, y_pred, pos_label=1))
+    print(roc_auc_score(y_test, y_pred))
     # OneClassSVM用来做离群检验，可以检测异常数据，适用于只知道正例的情况，是一种无监督方法
     # 下面的参数中相对比较重要的是nu，代表输入数据中异常数据比例的上界
     # 此时输入的全为正例，因此将其设为一个比较小的值

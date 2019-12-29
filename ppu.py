@@ -1,5 +1,5 @@
 from scapy.all import *
-from scapy.layers import *
+from scapy.layers import http
 
 import pandas as pd
 

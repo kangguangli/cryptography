@@ -20,7 +20,7 @@ def one_class_classifier():
     # 此时df内的数据包含了csv的所有列，具体使用了那些csv文件见函数内部，如果想使用更多数据可以在此函数基础上修改
     # 这里的df“好像”可以直接喂给一些对数据格式要求不严格的分类器，比如lightgbm，如果我没记错的话，也可能我记错了
 
-    df = preprocess.basic_process(df, True)
+    df = preprocess.basic_process(df, False)
     # 在此函数中对特征进行了一些裁剪，细节见函数内部，代码比较简单，不详细介绍了
     # 这列的df可以直接喂给分类器
     # 如果想对特征做更精细的处理，可以在此函数基础上进行修改
@@ -33,6 +33,8 @@ def one_class_classifier():
 
     postive = df[df['label'] == 0]
     negtive = df[df['label'] != 0]
+
+    print(postive.shape, negtive.shape)
 
     test_postive = postive.sample(frac=0.2, random_state=0, axis=0)
     train_postive = postive[~postive.index.isin(test_postive.index)]
@@ -57,18 +59,16 @@ def one_class_classifier():
     f1 = f1_score(y, y_pred, pos_label=1, average='binary')
 
     fpr, tpr, _ = roc_curve(y, y_pred, pos_label=1)
-    auc1 = auc(fpr, tpr)
+    _auc = auc(fpr, tpr)
 
-    print(p1, r1, f1, auc1)
+    print(p1, r1, f1, _auc)
 
     p0 = precision_score(y, y_pred, pos_label=-1, average='binary')
     r0 = recall_score(y, y_pred, pos_label=-1, average='binary')
     f0 = f1_score(y, y_pred, pos_label=-1, average='binary')
 
-    fpr, tpr, _ = roc_curve(y, y_pred, pos_label=-1)
-    auc0 = auc(fpr, tpr)
 
-    print(p0, r0, f0, auc0)
+    print(p0, r0, f0)
 
 
 if __name__ == "__main__":
